@@ -1,4 +1,4 @@
-CFLAGS = -O3 -Wall -march=native
+CFLAGS = -O3 -Wall -mcpu=apple-m1 -std=c++11
 
 all: ialspp_main ials_main icd_main popularity_main
 
