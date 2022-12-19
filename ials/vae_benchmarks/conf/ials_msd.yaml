@@ -1,0 +1,22 @@
+command: ials_main
+train_data: msd/train.csv
+test_train_data: msd/test_tr.csv
+test_test_data: msd/test_te.csv
+embedding_dim: "128"
+stddev: "0.1"
+regularization: "0.002"
+regularization_exp: "1.0"
+unobserved_weight: "0.2"
+epochs: "16"
+block_size: "128"
+eval_during_training: "1"
+
+general:
+  experiment_name: ${command}_${embedding_dim}_${now:%Y-%m-%d-%H-%M-%S}
+
+hydra:
+  run:
+    dir: outputs/msd/${general.experiment_name}
+  sweep:
+    dir: outputs/multiruns/msd
+    subdir: ${general.experiment_name}

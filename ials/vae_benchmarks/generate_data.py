@@ -23,8 +23,25 @@ import os
 import sys
 import urllib.request
 import zipfile
+import subprocess
+import gzip
 import numpy as np
 import pandas as pd
+
+
+def parse(path):
+    g = gzip.open(path, "rb")
+    for l in g:
+        yield eval(l)
+
+
+def get_df(path):
+    i = 0
+    df = {}
+    for d in parse(path):
+        df[i] = d
+        i += 1
+    return pd.DataFrame.from_dict(df, orient="index")
 
 
 def get_count(tp, id):
@@ -188,46 +205,98 @@ def main():
     )
     args = parser.parse_args()
 
-    # MovieLens 20M
-    ml20m_zip = os.path.join(args.output_dir, "ml20m.zip")
-    ml20m_dir = os.path.join(args.output_dir, "ml-20m/")
-    ml20m_file = os.path.join(args.output_dir, "ml-20m/ratings.csv")
-    print("Downloading and extracting Movielens 20M data")
-    urllib.request.urlretrieve(
-        "http://files.grouplens.org/datasets/movielens/ml-20m.zip", ml20m_zip
-    )
-    with zipfile.ZipFile(ml20m_zip, "r") as zipref:
-        zipref.extract("ml-20m/ratings.csv", args.output_dir)
-    os.remove(ml20m_zip)
-    raw_data = pd.read_csv(ml20m_file, header=0)
+    # # MovieLens 20M
+    # ml20m_zip = os.path.join(args.output_dir, "ml20m.zip")
+    # ml20m_dir = os.path.join(args.output_dir, "ml-20m/")
+    # ml20m_file = os.path.join(args.output_dir, "ml-20m/ratings.csv")
+    # print("Downloading and extracting Movielens 20M data")
+    # urllib.request.urlretrieve(
+    #     "http://files.grouplens.org/datasets/movielens/ml-20m.zip", ml20m_zip
+    # )
+    # with zipfile.ZipFile(ml20m_zip, "r") as zipref:
+    #     zipref.extract("ml-20m/ratings.csv", args.output_dir)
+    # os.remove(ml20m_zip)
+    # raw_data = pd.read_csv(ml20m_file, header=0)
     # os.remove(ml20m_file)
-    # binarize the data (only keep ratings >= 4)
-    raw_data = raw_data[raw_data["rating"] > 3.5]
-    generate_data(
-        raw_data, output_dir=ml20m_dir, n_heldout_users=10000, min_uc=5, min_sc=0
-    )
-    print("Done processing Movielens 20M.")
+    # # binarize the data (only keep ratings >= 4)
+    # raw_data = raw_data[raw_data["rating"] > 3.5]
+    # generate_data(
+    #     raw_data, output_dir=ml20m_dir, n_heldout_users=10000, min_uc=5, min_sc=0
+    # )
+    # print("Done processing Movielens 20M.")
 
-    # Million Song Data
-    print("Downloading and extracting Million Song Data")
-    msd_zip = os.path.join(args.output_dir, "msd.zip")
-    msd_dir = os.path.join(args.output_dir, "msd/")
-    msd_file = os.path.join(args.output_dir, "msd/train_triplets.txt")
-    urllib.request.urlretrieve(
-        "http://millionsongdataset.com/sites/default/files/challenge/train_triplets.txt.zip",
-        msd_zip,
-    )
-    with zipfile.ZipFile(msd_zip, "r") as zipref:
-        zipref.extractall(msd_dir)
-    os.remove(msd_zip)
-    raw_data = pd.read_csv(
-        msd_file, sep="\t", header=None, names=["userId", "movieId", "count"]
-    )
+    # # Million Song Data
+    # print("Downloading and extracting Million Song Data")
+    # msd_zip = os.path.join(args.output_dir, "msd.zip")
+    # msd_dir = os.path.join(args.output_dir, "msd/")
+    # msd_file = os.path.join(args.output_dir, "msd/train_triplets.txt")
+    # urllib.request.urlretrieve(
+    #     "http://millionsongdataset.com/sites/default/files/challenge/train_triplets.txt.zip",
+    #     msd_zip,
+    # )
+    # with zipfile.ZipFile(msd_zip, "r") as zipref:
+    #     zipref.extractall(msd_dir)
+    # os.remove(msd_zip)
+    # raw_data = pd.read_csv(
+    #     msd_file, sep="\t", header=None, names=["userId", "movieId", "count"]
+    # )
     # os.remove(msd_file)
-    generate_data(
-        raw_data, output_dir=msd_dir, n_heldout_users=50000, min_uc=20, min_sc=200
+    # generate_data(
+    #     raw_data, output_dir=msd_dir, n_heldout_users=50000, min_uc=20, min_sc=200
+    # )
+    # print("Done processing Million Song Data.")
+
+    # Amazon Electronics
+    print("Downloading and extracting Amazon Electronics Data")
+    electronics_dir = os.path.join(args.output_dir, "Electronics/")
+    electronics_file = "reviews_Electronics_5.json.gz"
+    if not os.path.exists(electronics_dir):
+        subprocess.call("mkdir " + electronics_dir, shell=True)
+    if not os.path.exists(os.path.join(electronics_dir, electronics_file)):
+        subprocess.call(
+            "cd ./Electronics && curl -O http://snap.stanford.edu/data/amazon/productGraph/categoryFiles/reviews_Electronics_5.json.gz",
+            shell=True,
+        )
+    data_df = get_df(os.path.join(electronics_dir, electronics_file))
+    raw_data = data_df.rename(
+        columns={"asin": "movieId", "reviewerID": "userId", "unixReviewTime": "time"}
     )
-    print("Done processing Million Song Data.")
+    raw_data = raw_data[["userId", "movieId", "time"]]
+    raw_data = raw_data.drop_duplicates(["userId", "movieId", "time"])
+    raw_data = raw_data.sort_values(
+        by=["time", "userId"], kind="mergesort"
+    ).reset_index(drop=True)
+    generate_data(
+        raw_data, output_dir=electronics_dir, n_heldout_users=5000, min_uc=10, min_sc=10
+    )
+    os.remove(os.path.join(electronics_dir, electronics_file))
+    print("Done processing Amazon Electronics Data.")
+
+    # Amazon Grocery&Gourmet Food
+    print("Downloading and extracting Amazon Grocery&Gourmet Food Data")
+    food_dir = os.path.join(args.output_dir, "Grocery_and_Gourmet_Food/")
+    food_file = "reviews_Grocery_and_Gourmet_Food_5.json.gz"
+    if not os.path.exists(food_dir):
+        subprocess.call("mkdir " + food_dir, shell=True)
+    if not os.path.exists(os.path.join(food_dir, food_file)):
+        subprocess.call(
+            "cd ./Grocery_and_Gourmet_Food && curl -O http://snap.stanford.edu/data/amazon/productGraph/categoryFiles/reviews_Grocery_and_Gourmet_Food_5.json.gz",
+            shell=True,
+        )
+    data_df = get_df(os.path.join(food_dir, food_file))
+    raw_data = data_df.rename(
+        columns={"asin": "movieId", "reviewerID": "userId", "unixReviewTime": "time"}
+    )
+    raw_data = raw_data[["userId", "movieId", "time"]]
+    raw_data = raw_data.drop_duplicates(["userId", "movieId", "time"])
+    raw_data = raw_data.sort_values(
+        by=["time", "userId"], kind="mergesort"
+    ).reset_index(drop=True)
+    generate_data(
+        raw_data, output_dir=food_dir, n_heldout_users=2000, min_uc=5, min_sc=5
+    )
+    os.remove(os.path.join(food_dir, food_file))
+    print("Done processing Amazon Grocery&Gourmet Food Data.")
 
 
 if __name__ == "__main__":

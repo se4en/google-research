@@ -6,7 +6,7 @@ import hydra
 from omegaconf import DictConfig
 
 
-@hydra.main(version_base=None, config_path="./conf", config_name="ialspp.yaml")
+@hydra.main(version_base=None, config_path="./conf", config_name="ialspp_msd.yaml")
 def run_ials(cfg: DictConfig):
     full_command = [
         f"./bin/{cfg.command}",
