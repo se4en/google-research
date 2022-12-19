@@ -341,12 +341,15 @@ int main(int argc, char* argv[]) {
   auto evaluate = [&](int epoch) {
     Recommender::VectorXf metrics =
         recommender->EvaluateDataset(test_tr, test_te.by_user());
-    printf("Epoch %4d:\t Rec20=%.4f, Rec50=%.4f NDCG100=%.4f\n",
-           epoch, metrics[0], metrics[1], metrics[2]);
+    // printf("Epoch %4d:\t Rec20=%.4f, Rec50=%.4f NDCG100=%.4f\n",
+    //        epoch, metrics[0], metrics[1], metrics[2]);
   };
 
   bool eval_during_training =
       std::atoi(flags.at("eval_during_training").c_str());
+
+  double full_train_time = 0.0;
+  Recommender::VectorXf eval_metrics;
 
   // Evaluate the model before training starts.
   if (eval_during_training) {
@@ -361,17 +364,24 @@ int main(int argc, char* argv[]) {
     auto time_train_end = std::chrono::steady_clock::now();
     auto time_eval_start = std::chrono::steady_clock::now();
     if (eval_during_training) {
-      evaluate(epoch + 1);
+      eval_metrics = evaluate(epoch + 1);
     }
     auto time_eval_end = std::chrono::steady_clock::now();
-    printf("Timer: Train=%d\tEval=%d\n",
-           std::chrono::duration_cast<std::chrono::milliseconds>(
-               time_train_end - time_train_start),
-           std::chrono::duration_cast<std::chrono::milliseconds>(
-               time_eval_end - time_eval_start));
+
+    full_train_time += std::chrono::duration_cast<std::chrono::milliseconds>(time_train_end - time_train_start).count()/1000.0
+
+    printf("Epoch %4d:\t Rec20=%.4f, Rec50=%.4f, NDCG100=%.4f, time=%.4f\n",
+      epoch+1, eval_metrics[0], eval_metrics[1], eval_metrics[2], full_train_time);
+    // printf("Timer: Train=%d\tEval=%d\n",
+    //        std::chrono::duration_cast<std::chrono::milliseconds>(
+    //            time_train_end - time_train_start),
+    //        std::chrono::duration_cast<std::chrono::milliseconds>(
+    //            time_eval_end - time_eval_start));
   }
   if (!eval_during_training) {
-    evaluate(num_epochs);
+    eval_metrics = evaluate(num_epochs);
+    printf("Epoch %4d:\t Rec20=%.4f, Rec50=%.4f, NDCG100=%.4f, time=%.4f\n",
+      epoch+1, eval_metrics[0], eval_metrics[1], eval_metrics[2], full_train_time);
   }
 
   delete recommender;

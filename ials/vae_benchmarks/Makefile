@@ -1,10 +1,11 @@
-CFLAGS = -O3 -Wall -mcpu=apple-m1 -std=c++11
+CFLAGS = -O3  -std=c++11  -march=native # -mcpu=apple-m1 -Wall 
+LFLAGS = -ljsoncpp 
 
 all: ialspp_main ials_main icd_main popularity_main
 
 ialspp_main: ialspp_main.cc
 	g++ -pthread -I eigen-3.3.9 ${CFLAGS} -c ialspp_main.cc -o lib/ialspp_main.o
-	g++ -pthread ${CFLAGS} lib/ialspp_main.o -o bin/ialspp_main
+	g++ -pthread ${CFLAGS} lib/ialspp_main.o -o bin/ialspp_main 
 
 ials_main: ials_main.cc
 	g++ -pthread -I eigen-3.3.9 ${CFLAGS} -c ials_main.cc -o lib/ials_main.o

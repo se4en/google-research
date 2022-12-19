@@ -24,12 +24,18 @@
 #include <stdio.h>
 #include <thread>
 #include <unordered_map>
+#include <map>
 #include <vector>
 
+// #include "json11/json11.hpp"
+// #include "json.hpp"
 #include "Eigen/Dense"
 #include "Eigen/Core"
 
 #include "recommender.h"
+
+// using json = nlohmann::json;
+
 
 const Recommender::VectorXf ProjectBlock(
     const SpVector& user_history,
@@ -353,6 +359,7 @@ class IALSppRecommender : public Recommender {
 
 
 int main(int argc, char* argv[]) {
+  Recommender::VectorXf eval_metrics;
   // Default flags.
   std::unordered_map<std::string, std::string> flags;
   flags["embedding_dim"] = "16";
@@ -363,6 +370,9 @@ int main(int argc, char* argv[]) {
   flags["print_train_stats"] = "0";
   flags["block_size"] = "128";
   flags["eval_during_training"] = "1";
+  // flags["dump_file"] = "results.json";
+
+  // std::cout << "Num threads: " << std::thread::hardware_concurrency() << std::endl;
 
   // Parse flags. This is a simple implementation to avoid external
   // dependencies.
@@ -403,16 +413,19 @@ int main(int argc, char* argv[]) {
     std::atoi(flags.at("block_size").c_str()));
   ((IALSppRecommender*)recommender)->SetPrintTrainStats(
       std::atoi(flags.at("print_train_stats").c_str()));
+  // std::string dump_fname = flags.at("dump_file").c_str();
 
   // Disable output buffer to see results without delay.
   setbuf(stdout, NULL);
+  float full_train_time = 0.0;
 
   // Helper for evaluation.
   auto evaluate = [&](int epoch) {
     Recommender::VectorXf metrics =
         recommender->EvaluateDataset(test_tr, test_te.by_user());
-    printf("Epoch %4d:\t Rec20=%.4f, Rec50=%.4f NDCG100=%.4f\n",
-           epoch, metrics[0], metrics[1], metrics[2]);
+    // printf("Epoch %4d:\t Rec20=%.4f, Rec50=%.4f, NDCG100=%.4f, time=%.4f\n",
+    //        epoch, metrics[0], metrics[1], metrics[2], full_train_time);
+    return metrics;
   };
 
   bool eval_during_training =
@@ -423,6 +436,9 @@ int main(int argc, char* argv[]) {
     evaluate(0);
   }
 
+  // std::map<int, std::map<std::string, double>> history {};
+  // json11::Json::object json_hist = json11::Json::object {};
+
   // Train and evaluate.
   int num_epochs = std::atoi(flags.at("epochs").c_str());
   for (int epoch = 0; epoch < num_epochs; ++epoch) {
@@ -431,18 +447,50 @@ int main(int argc, char* argv[]) {
     auto time_train_end = std::chrono::steady_clock::now();
     auto time_eval_start = std::chrono::steady_clock::now();
     if (eval_during_training) {
-      evaluate(epoch + 1);
+      eval_metrics = evaluate(epoch + 1);
     }
     auto time_eval_end = std::chrono::steady_clock::now();
-    printf("Timer: Train=%d\tEval=%d\n",
-           std::chrono::duration_cast<std::chrono::milliseconds>(
-               time_train_end - time_train_start),
-           std::chrono::duration_cast<std::chrono::milliseconds>(
-               time_eval_end - time_eval_start));
+
+    full_train_time = full_train_time + std::chrono::duration_cast<std::chrono::milliseconds>(
+               time_train_end - time_train_start).count()/1000.0;
+    // printf("Timer: Train=%d\tEval=%d\n",
+    //        full_train_time,
+    //        std::chrono::duration_cast<std::chrono::seconds>(
+    //            time_eval_end - time_eval_start));
+
+    // std::map<std::string, double> epoch_res = {{"Rec20", eval_metrics[0]}, {"Rec50", eval_metrics[1]}, {"NDCG100", eval_metrics[2]}, {"train_time", full_train_time}};
+    // history[epoch+1] = epoch_res;
+    // json_hist[std::to_string(epoch+1)] = json11::Json::object {
+    //   { "Rec20", eval_metrics[0] },
+    //   { "Rec50", eval_metrics[1] },
+    //   { "NDCG100", eval_metrics[2] },
+    //   { "train_time", full_train_time },
+    // };
+    printf("Epoch %4d:\t Rec20=%.4f, Rec50=%.4f, NDCG100=%.4f, time=%.4f\n",
+      epoch+1, eval_metrics[0], eval_metrics[1], eval_metrics[2], full_train_time);
   }
   if (!eval_during_training) {
-    evaluate(num_epochs);
+    eval_metrics = evaluate(num_epochs);    
+    // std::map<std::string, double> epoch_res = {{"Rec20", eval_metrics[0]}, {"Rec50", eval_metrics[1]}, {"NDCG100", eval_metrics[2]}, {"train_time", full_train_time}};
+    // history[num_epochs] = epoch_res;
+    // json_hist[std::to_string(num_epochs)] = json11::Json::object {
+    //   { "Rec20", eval_metrics[0] },
+    //   { "Rec50", eval_metrics[1] },
+    //   { "NDCG100", eval_metrics[2] },
+    //   { "train_time", full_train_time },
+    // };
+    printf("Epoch %4d:\t Rec20=%.4f, Rec50=%.4f, NDCG100=%.4f, time=%.4f\n",
+      num_epochs, eval_metrics[0], eval_metrics[1], eval_metrics[2], full_train_time);
   }
+
+  // json11::Json json_final = json11::Json{ json_hist };
+  // json11::Json Json_mp = json11::Json(json_final);
+
+  // std::string dump_history = Json_mp.dump(); 
+
+  // std::ofstream out(dump_fname);
+  // out << dump_history;
+  // out.close();
 
   delete recommender;
   return 0;
