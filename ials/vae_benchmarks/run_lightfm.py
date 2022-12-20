@@ -44,16 +44,16 @@ def run_lightfm(cfg: DictConfig):
     )
 
     model = LightFM(
-        no_components=cfg.embedding_dim,
+        no_components=int(cfg.embedding_dim),
         loss=cfg.loss_name,
         learning_schedule=cfg.learning_schedule,
-        learning_rate=cfg.learning_rate,
+        learning_rate=float(cfg.learning_rate),
     )
 
     model.fit_partial(X_ml20_full_train, epochs=0, num_threads=NUM_THREADS)
     full_train_time = 0
 
-    for epoch in range(cfg.epochs):
+    for epoch in range(int(cfg.epochs)):
         start_time = time.time()
         model.fit_partial(X_ml20_full_train, epochs=1, num_threads=NUM_THREADS)
         full_train_time += time.time() - start_time
@@ -75,12 +75,16 @@ def run_lightfm(cfg: DictConfig):
             ).mean(),
         }
 
+        print(
+            f"Epoch {epoch}\t Rec20={eval_metrics['Rec20']:.4f}, Rec50={eval_metrics['Rec50']:.4f}, time={full_train_time:.4f}\n"
+        )
         result += f"Epoch {epoch}\t Rec20={eval_metrics['Rec20']:.4f}, Rec50={eval_metrics['Rec50']:.4f}, time={full_train_time:.4f}\n"
 
     hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
     cur_dir = hydra_cfg["runtime"]["output_dir"]
 
     with open(os.path.join(cur_dir, "results.txt"), "w") as f:
+        print("write to file")
         f.write(result)
 
 
