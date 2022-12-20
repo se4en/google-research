@@ -1,0 +1,16 @@
+loss_name: warp
+dataset_name: ml-20m
+embedding_dim: "128"
+learning_schedule: adagrad
+learning_rate: "0.05"
+epochs: "16"
+
+general:
+  experiment_name: ${embedding_dim}_${now:%Y-%m-%d-%H-%M-%S}
+
+hydra:
+  run:
+    dir: outputs/${loss_name}/${dataset_name}/${general.experiment_name}
+  sweep:
+    dir: outputs/multiruns/${loss_name}/${dataset_name}
+    subdir: ${general.experiment_name}
