@@ -56,6 +56,7 @@ def run_lightfm(cfg: DictConfig):
     for epoch in range(int(cfg.epochs)):
         start_time = time.time()
         model.fit_partial(X_ml20_full_train, epochs=1, num_threads=NUM_THREADS)
+        # model.fit_partial(X_ml20_train, epochs=1, num_threads=NUM_THREADS)
         full_train_time += time.time() - start_time
 
         eval_metrics = {
@@ -64,19 +65,35 @@ def run_lightfm(cfg: DictConfig):
                 test_interactions=X_ml20_test_te,
                 train_interactions=X_ml20_full_train,
                 k=20,
-                num_threads=NUM_THREADS,
+                # num_threads=NUM_THREADS,
             ).mean(),
             "Rec50": recall_at_k(
                 model,
                 test_interactions=X_ml20_test_te,
                 train_interactions=X_ml20_full_train,
                 k=50,
-                num_threads=NUM_THREADS,
+                # num_threads=NUM_THREADS,
             ).mean(),
         }
+        # eval_metrics = {
+        #     "Rec20": recall_at_k(
+        #         model,
+        #         test_interactions=X_ml20_test_te,
+        #         train_interactions=X_ml20_test_tr,
+        #         k=20,
+        #         # num_threads=NUM_THREADS,
+        #     ).mean(),
+        #     "Rec50": recall_at_k(
+        #         model,
+        #         test_interactions=X_ml20_test_te,
+        #         train_interactions=X_ml20_test_tr,
+        #         k=50,
+        #         # num_threads=NUM_THREADS,
+        #     ).mean(),
+        # }
 
         print(
-            f"Epoch {epoch}\t Rec20={eval_metrics['Rec20']:.4f}, Rec50={eval_metrics['Rec50']:.4f}, time={full_train_time:.4f}\n"
+            f"Epoch {epoch}\t Rec20={eval_metrics['Rec20']:.4f}, Rec50={eval_metrics['Rec50']:.4f}, time={full_train_time:.4f}"
         )
         result += f"Epoch {epoch}\t Rec20={eval_metrics['Rec20']:.4f}, Rec50={eval_metrics['Rec50']:.4f}, time={full_train_time:.4f}\n"
 

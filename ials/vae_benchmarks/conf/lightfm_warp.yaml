@@ -3,7 +3,7 @@ dataset_name: ml-20m
 embedding_dim: "128"
 learning_schedule: adagrad
 learning_rate: "0.05"
-epochs: "16"
+epochs: "16" #"32"
 
 general:
   experiment_name: ${embedding_dim}_${now:%Y-%m-%d-%H-%M-%S}
