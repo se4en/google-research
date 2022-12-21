@@ -3,6 +3,7 @@ import subprocess
 import json
 import time
 from typing import Any
+from itertools import chain
 
 import pandas as pd
 from lightfm import LightFM
@@ -29,19 +30,25 @@ def run_lightfm(cfg: DictConfig):
     dataset.fit_partial(test_tr_ml20["uid"].tolist(), test_tr_ml20["sid"].tolist())
     dataset.fit_partial(test_te_ml20["uid"].tolist(), test_te_ml20["sid"].tolist())
 
-    (X_ml20_train, weights) = dataset.build_interactions(
-        ((x[1]["uid"], x[1]["sid"]) for x in train_ml20.iterrows())
-    )
-    (X_ml20_test_tr, weights) = dataset.build_interactions(
-        ((x[1]["uid"], x[1]["sid"]) for x in test_tr_ml20.iterrows())
+    # (X_ml20_train, weights) = dataset.build_interactions(
+    #     ((x[1]["uid"], x[1]["sid"]) for x in train_ml20.iterrows())
+    # )
+    # (X_ml20_test_tr, weights) = dataset.build_interactions(
+    #     ((x[1]["uid"], x[1]["sid"]) for x in test_tr_ml20.iterrows())
+    # )
+    (X_ml20_full_train, weights) = dataset.build_interactions(
+        (
+            (x[1]["uid"], x[1]["sid"])
+            for x in chain(train_ml20.iterrows(), test_tr_ml20.iterrows())
+        )
     )
     (X_ml20_test_te, weights) = dataset.build_interactions(
         ((x[1]["uid"], x[1]["sid"]) for x in test_te_ml20.iterrows())
     )
 
-    X_ml20_full_train = sparse.coo_matrix(
-        X_ml20_train.toarray() + X_ml20_test_tr.toarray()
-    )
+    # X_ml20_full_train = sparse.coo_matrix(
+    #     X_ml20_train.toarray() + X_ml20_test_tr.toarray()
+    # )
 
     model = LightFM(
         no_components=int(cfg.embedding_dim),
@@ -66,14 +73,14 @@ def run_lightfm(cfg: DictConfig):
                     test_interactions=X_ml20_test_te,
                     train_interactions=X_ml20_full_train,
                     k=20,
-                    # num_threads=NUM_THREADS,
+                    num_threads=NUM_THREADS,
                 ).mean(),
                 "Rec50": recall_at_k(
                     model,
                     test_interactions=X_ml20_test_te,
                     train_interactions=X_ml20_full_train,
                     k=50,
-                    # num_threads=NUM_THREADS,
+                    num_threads=NUM_THREADS,
                 ).mean(),
             }
         # eval_metrics = {
