@@ -205,46 +205,46 @@ def main():
     )
     args = parser.parse_args()
 
-    # # MovieLens 20M
-    # ml20m_zip = os.path.join(args.output_dir, "ml20m.zip")
-    # ml20m_dir = os.path.join(args.output_dir, "ml-20m/")
-    # ml20m_file = os.path.join(args.output_dir, "ml-20m/ratings.csv")
-    # print("Downloading and extracting Movielens 20M data")
-    # urllib.request.urlretrieve(
-    #     "http://files.grouplens.org/datasets/movielens/ml-20m.zip", ml20m_zip
-    # )
-    # with zipfile.ZipFile(ml20m_zip, "r") as zipref:
-    #     zipref.extract("ml-20m/ratings.csv", args.output_dir)
-    # os.remove(ml20m_zip)
-    # raw_data = pd.read_csv(ml20m_file, header=0)
-    # os.remove(ml20m_file)
-    # # binarize the data (only keep ratings >= 4)
-    # raw_data = raw_data[raw_data["rating"] > 3.5]
-    # generate_data(
-    #     raw_data, output_dir=ml20m_dir, n_heldout_users=10000, min_uc=5, min_sc=0
-    # )
-    # print("Done processing Movielens 20M.")
+    # MovieLens 20M
+    ml20m_zip = os.path.join(args.output_dir, "ml20m.zip")
+    ml20m_dir = os.path.join(args.output_dir, "ml-20m/")
+    ml20m_file = os.path.join(args.output_dir, "ml-20m/ratings.csv")
+    print("Downloading and extracting Movielens 20M data")
+    urllib.request.urlretrieve(
+        "http://files.grouplens.org/datasets/movielens/ml-20m.zip", ml20m_zip
+    )
+    with zipfile.ZipFile(ml20m_zip, "r") as zipref:
+        zipref.extract("ml-20m/ratings.csv", args.output_dir)
+    os.remove(ml20m_zip)
+    raw_data = pd.read_csv(ml20m_file, header=0)
+    os.remove(ml20m_file)
+    # binarize the data (only keep ratings >= 4)
+    raw_data = raw_data[raw_data["rating"] > 3.5]
+    generate_data(
+        raw_data, output_dir=ml20m_dir, n_heldout_users=10000, min_uc=5, min_sc=0
+    )
+    print("Done processing Movielens 20M.")
 
-    # # Million Song Data
-    # print("Downloading and extracting Million Song Data")
-    # msd_zip = os.path.join(args.output_dir, "msd.zip")
-    # msd_dir = os.path.join(args.output_dir, "msd/")
-    # msd_file = os.path.join(args.output_dir, "msd/train_triplets.txt")
-    # urllib.request.urlretrieve(
-    #     "http://millionsongdataset.com/sites/default/files/challenge/train_triplets.txt.zip",
-    #     msd_zip,
-    # )
-    # with zipfile.ZipFile(msd_zip, "r") as zipref:
-    #     zipref.extractall(msd_dir)
-    # os.remove(msd_zip)
-    # raw_data = pd.read_csv(
-    #     msd_file, sep="\t", header=None, names=["userId", "movieId", "count"]
-    # )
-    # os.remove(msd_file)
-    # generate_data(
-    #     raw_data, output_dir=msd_dir, n_heldout_users=50000, min_uc=20, min_sc=200
-    # )
-    # print("Done processing Million Song Data.")
+    # Million Song Data
+    print("Downloading and extracting Million Song Data")
+    msd_zip = os.path.join(args.output_dir, "msd.zip")
+    msd_dir = os.path.join(args.output_dir, "msd/")
+    msd_file = os.path.join(args.output_dir, "msd/train_triplets.txt")
+    urllib.request.urlretrieve(
+        "http://millionsongdataset.com/sites/default/files/challenge/train_triplets.txt.zip",
+        msd_zip,
+    )
+    with zipfile.ZipFile(msd_zip, "r") as zipref:
+        zipref.extractall(msd_dir)
+    os.remove(msd_zip)
+    raw_data = pd.read_csv(
+        msd_file, sep="\t", header=None, names=["userId", "movieId", "count"]
+    )
+    os.remove(msd_file)
+    generate_data(
+        raw_data, output_dir=msd_dir, n_heldout_users=50000, min_uc=20, min_sc=200
+    )
+    print("Done processing Million Song Data.")
 
     # Amazon Electronics
     print("Downloading and extracting Amazon Electronics Data")

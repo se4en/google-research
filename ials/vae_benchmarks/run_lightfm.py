@@ -59,22 +59,23 @@ def run_lightfm(cfg: DictConfig):
         # model.fit_partial(X_ml20_train, epochs=1, num_threads=NUM_THREADS)
         full_train_time += time.time() - start_time
 
-        eval_metrics = {
-            "Rec20": recall_at_k(
-                model,
-                test_interactions=X_ml20_test_te,
-                train_interactions=X_ml20_full_train,
-                k=20,
-                # num_threads=NUM_THREADS,
-            ).mean(),
-            "Rec50": recall_at_k(
-                model,
-                test_interactions=X_ml20_test_te,
-                train_interactions=X_ml20_full_train,
-                k=50,
-                # num_threads=NUM_THREADS,
-            ).mean(),
-        }
+        if epoch % 2 == 0:
+            eval_metrics = {
+                "Rec20": recall_at_k(
+                    model,
+                    test_interactions=X_ml20_test_te,
+                    train_interactions=X_ml20_full_train,
+                    k=20,
+                    # num_threads=NUM_THREADS,
+                ).mean(),
+                "Rec50": recall_at_k(
+                    model,
+                    test_interactions=X_ml20_test_te,
+                    train_interactions=X_ml20_full_train,
+                    k=50,
+                    # num_threads=NUM_THREADS,
+                ).mean(),
+            }
         # eval_metrics = {
         #     "Rec20": recall_at_k(
         #         model,
